@@ -99,6 +99,7 @@ with dai.Device(pipeline) as device:
     startTime = time.monotonic()
     counter = 0
     fps = 0
+    detcount= 0
 
     while True:
         inPreview = previewQueue.get()
@@ -120,10 +121,10 @@ with dai.Device(pipeline) as device:
         depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
 
         detections = inDet.detections
+        #print(detections)
         if len(detections) != 0:
             boundingBoxMapping = xoutBoundingBoxDepthMapping.get()
             roiDatas = boundingBoxMapping.getConfigData()
-
             for roiData in roiDatas:
                 roi = roiData.roi
                 roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
@@ -141,13 +142,19 @@ with dai.Device(pipeline) as device:
         width  = frame.shape[1]
         for detection in detections:
             # Denormalize bounding box
+            if detcount < 51: # check if less than n detections have been made
+                detcount += 1
+            else:
+                detcount = 0
             x1 = int(detection.xmin * width)
             x2 = int(detection.xmax * width)
             y1 = int(detection.ymin * height)
             y2 = int(detection.ymax * height)
             try:
                 label = labelMap[detection.label] # label is the output the system prints when it identifies an object
-                print(label) # Output to console
+                if detcount == 50: # send out label after n-1 detections
+                    print(label) # label of object detected
+                    print(detection.spatialCoordinates.z / 1000) # z-distance from object in m
             except:
                 label = detection.label
             cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
@@ -157,6 +164,7 @@ with dai.Device(pipeline) as device:
             cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
 
             cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), cv2.FONT_HERSHEY_SIMPLEX)
+
 
         cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (255,255,255))
         cv2.imshow("depth", depthFrameColor)
