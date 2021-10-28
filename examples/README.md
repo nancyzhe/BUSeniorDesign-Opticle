@@ -11,7 +11,8 @@ More details about examples can be found at [Luxonis DepthAI API - Code Samples]
 ## Setup
 
 ```
-python3 install_requirements.py<br/>
+python3 install_requirements.py
+OR
 python install_requirements.py (Windows)
 
 ```
