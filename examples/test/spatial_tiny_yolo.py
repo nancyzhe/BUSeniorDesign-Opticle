@@ -1,5 +1,3 @@
-# Test file for spatial mobile net
-
 #!/usr/bin/env python3
 
 from pathlib import Path
@@ -10,22 +8,43 @@ import numpy as np
 import time
 
 '''
-Spatial detection network demo.
-    Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
+Spatial Tiny-yolo example
+  Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
+  Can be used for tiny-yolo-v3 or tiny-yolo-v4 networks
 '''
 
 # Get argument first
-nnBlobPath = str((Path(__file__).parent / Path('../models/mobilenet-ssd_openvino_2021.4_6shave.blob')).resolve().absolute())
-if len(sys.argv) > 1:
-    nnBlobPath = sys.argv[1]
+nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+if 1 < len(sys.argv):
+    arg = sys.argv[1]
+    if arg == "yolo3":
+        nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v3-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+    elif arg == "yolo4":
+        nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+    else:
+        nnBlobPath = arg
+else:
+    print("Using Tiny YoloV4 model. If you wish to use Tiny YOLOv3, call 'tiny_yolo.py yolo3'")
 
 if not Path(nnBlobPath).exists():
     import sys
     raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
 
-# MobilenetSSD label texts
-labelMap = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
-            "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
+# Tiny yolo v3/4 label texts
+labelMap = [
+    "person",         "bicycle",    "car",           "motorbike",     "aeroplane",   "bus",           "train",
+    "truck",          "boat",       "traffic light", "fire hydrant",  "stop sign",   "parking meter", "bench",
+    "bird",           "cat",        "dog",           "horse",         "sheep",       "cow",           "elephant",
+    "bear",           "zebra",      "giraffe",       "backpack",      "umbrella",    "handbag",       "tie",
+    "suitcase",       "frisbee",    "skis",          "snowboard",     "sports ball", "kite",          "baseball bat",
+    "baseball glove", "skateboard", "surfboard",     "tennis racket", "bottle",      "wine glass",    "cup",
+    "fork",           "knife",      "spoon",         "bowl",          "banana",      "apple",         "sandwich",
+    "orange",         "broccoli",   "carrot",        "hot dog",       "pizza",       "donut",         "cake",
+    "chair",          "sofa",       "pottedplant",   "bed",           "diningtable", "toilet",        "tvmonitor",
+    "laptop",         "mouse",      "remote",        "keyboard",      "cell phone",  "microwave",     "oven",
+    "toaster",        "sink",       "refrigerator",  "book",          "clock",       "vase",          "scissors",
+    "teddy bear",     "hair drier", "toothbrush"
+]
 
 syncNN = True
 
@@ -34,7 +53,7 @@ pipeline = dai.Pipeline()
 
 # Define sources and outputs
 camRgb = pipeline.create(dai.node.ColorCamera)
-spatialDetectionNetwork = pipeline.create(dai.node.MobileNetSpatialDetectionNetwork)
+spatialDetectionNetwork = pipeline.create(dai.node.YoloSpatialDetectionNetwork)
 monoLeft = pipeline.create(dai.node.MonoCamera)
 monoRight = pipeline.create(dai.node.MonoCamera)
 stereo = pipeline.create(dai.node.StereoDepth)
@@ -50,7 +69,7 @@ xoutBoundingBoxDepthMapping.setStreamName("boundingBoxDepthMapping")
 xoutDepth.setStreamName("depth")
 
 # Properties
-camRgb.setPreviewSize(300, 300)
+camRgb.setPreviewSize(416, 416)
 camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
 camRgb.setInterleaved(False)
 camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
@@ -60,7 +79,7 @@ monoLeft.setBoardSocket(dai.CameraBoardSocket.LEFT)
 monoRight.setResolution(dai.MonoCameraProperties.SensorResolution.THE_400_P)
 monoRight.setBoardSocket(dai.CameraBoardSocket.RIGHT)
 
-# Setting node configs
+# setting node configs
 stereo.initialConfig.setConfidenceThreshold(255)
 
 spatialDetectionNetwork.setBlobPath(nnBlobPath)
@@ -69,6 +88,13 @@ spatialDetectionNetwork.input.setBlocking(False)
 spatialDetectionNetwork.setBoundingBoxScaleFactor(0.5)
 spatialDetectionNetwork.setDepthLowerThreshold(100)
 spatialDetectionNetwork.setDepthUpperThreshold(5000)
+
+# Yolo specific parameters
+spatialDetectionNetwork.setNumClasses(80)
+spatialDetectionNetwork.setCoordinateSize(4)
+spatialDetectionNetwork.setAnchors(np.array([10,14, 23,27, 37,58, 81,82, 135,169, 344,319]))
+spatialDetectionNetwork.setAnchorMasks({ "side26": np.array([1,2,3]), "side13": np.array([3,4,5]) })
+spatialDetectionNetwork.setIouThreshold(0.5)
 
 # Linking
 monoLeft.out.link(stereo.left)
@@ -92,18 +118,25 @@ with dai.Device(pipeline) as device:
     # Output queues will be used to get the rgb frames and nn data from the outputs defined above
     previewQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
     detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
-    xoutBoundingBoxDepthMapping = device.getOutputQueue(name="boundingBoxDepthMapping", maxSize=4, blocking=False)
+    xoutBoundingBoxDepthMappingQueue = device.getOutputQueue(name="boundingBoxDepthMapping", maxSize=4, blocking=False)
     depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
 
     startTime = time.monotonic()
     counter = 0
     fps = 0
-    detcount= 0
+    color = (255, 255, 255)
+    detcount = 0
 
     while True:
         inPreview = previewQueue.get()
         inDet = detectionNNQueue.get()
         depth = depthQueue.get()
+
+        frame = inPreview.getCvFrame()
+        depthFrame = depth.getFrame()
+        depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
+        depthFrameColor = cv2.equalizeHist(depthFrameColor)
+        depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
 
         counter+=1
         current_time = time.monotonic()
@@ -112,18 +145,11 @@ with dai.Device(pipeline) as device:
             counter = 0
             startTime = current_time
 
-        frame = inPreview.getCvFrame()
-        depthFrame = depth.getFrame()
-
-        depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
-        depthFrameColor = cv2.equalizeHist(depthFrameColor)
-        depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
-
         detections = inDet.detections
-        #print(detections)
         if len(detections) != 0:
-            boundingBoxMapping = xoutBoundingBoxDepthMapping.get()
+            boundingBoxMapping = xoutBoundingBoxDepthMappingQueue.get()
             roiDatas = boundingBoxMapping.getConfigData()
+
             for roiData in roiDatas:
                 roi = roiData.roi
                 roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
@@ -134,7 +160,8 @@ with dai.Device(pipeline) as device:
                 xmax = int(bottomRight.x)
                 ymax = int(bottomRight.y)
 
-                cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), 255, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
+                cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
+
 
         # If the frame is available, draw bounding boxes on it and show the frame
         height = frame.shape[0]
@@ -150,10 +177,10 @@ with dai.Device(pipeline) as device:
             y1 = int(detection.ymin * height)
             y2 = int(detection.ymax * height)
             try:
-                label = labelMap[detection.label] # label is the output the system prints when it identifies an object
+                label = labelMap[detection.label]
                 if detcount == 50: # send out label after n-1 detections
                     print(label) # label of object detected
-                    print(detection.spatialCoordinates.z / 1000) # z-distance from object in m
+                    print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
             except:
                 label = detection.label
             cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
@@ -162,12 +189,11 @@ with dai.Device(pipeline) as device:
             cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
             cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (255, 0, 0), cv2.FONT_HERSHEY_SIMPLEX)
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
-
-        cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, (255,255,255))
+        cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
         cv2.imshow("depth", depthFrameColor)
-        cv2.imshow("preview", frame)
+        cv2.imshow("rgb", frame)
 
         if cv2.waitKey(1) == ord('q'):
             break
