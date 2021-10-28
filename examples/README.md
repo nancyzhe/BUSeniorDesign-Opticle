@@ -2,7 +2,7 @@
 
 In this directory there are usage examples of DepthAI Python library.
 
-In the test folder is a file that can be used to test the OAK-D camera.
+In the [test folder](https://github.com/amg1998/BUSeniorDesign-ViSiO-21-22/tree/main/examples/test) is a file that can be used to test the OAK-D camera.
 
 ## Description
 
