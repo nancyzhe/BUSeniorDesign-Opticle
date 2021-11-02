@@ -8,12 +8,17 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
+import RPi.GPIO as GPIO
 
 '''
 Spatial detection network demo.
     Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
 '''
-
+#setup PI
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(8,GPIO.OUT)
+pwm = GPIO.PWM(8, 100)
+pwm.start(0)
 # Get argument first
 nnBlobPath = str((Path(__file__).parent / Path('../models/mobilenet-ssd_openvino_2021.4_6shave.blob')).resolve().absolute())
 if len(sys.argv) > 1:
@@ -149,11 +154,22 @@ with dai.Device(pipeline) as device:
             x2 = int(detection.xmax * width)
             y1 = int(detection.ymin * height)
             y2 = int(detection.ymax * height)
+            
+            
             try:
                 label = labelMap[detection.label] # label is the output the system prints when it identifies an object
                 if detcount == 50: # send out label after n-1 detections
                     print(label) # label of object detected
                     print(detection.spatialCoordinates.z / 1000) # z-distance from object in m
+            
+                
+                if label=="person":
+                    strength = detection.spatialCoordinates.z / 1000 * 20
+                    pwm.ChangeDutyCycle(100-strength)
+                    print(100-strength)
+                else:
+                    pwm.ChangeDutyCycle(0)
+            
             except:
                 label = detection.label
             cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
