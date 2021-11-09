@@ -6,12 +6,24 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
+import RPi.GPIO as GPIO
 
 '''
 Spatial Tiny-yolo example
   Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
   Can be used for tiny-yolo-v3 or tiny-yolo-v4 networks
 '''
+
+#setup PI
+GPIO.setmode(GPIO.BOARD)
+#motor1
+GPIO.setup(8,GPIO.OUT)
+pwm = GPIO.PWM(8, 100)
+pwm.start(0)
+#motor2
+GPIO.setup(10,GPIO.OUT)
+pwm2 = GPIO.PWM(10, 100)
+pwm2.start(0)
 
 # Get argument first
 nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
@@ -178,9 +190,30 @@ with dai.Device(pipeline) as device:
             y2 = int(detection.ymax * height)
             try:
                 label = labelMap[detection.label]
+                
                 if detcount == 50: # send out label after n-1 detections
                     print(label) # label of object detected
                     print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
+                    
+                if label=="person" and detection.spatialCoordinates.x<=0:
+                    strength = detection.spatialCoordinates.z / 1000 * 20
+                    pwm.ChangeDutyCycle(100-strength)
+                    print("1 ",100-strength)
+                else:
+                    pwm.ChangeDutyCycle(0)
+                    
+                    
+                if label=="person" and detection.spatialCoordinates.x>=0:
+                    strength2= detection.spatialCoordinates.z / 1000 * 20
+                    pwm2.ChangeDutyCycle(100-strength2)
+                    print("2 ",100-strength2)
+                    
+                else:
+                    pwm2.ChangeDutyCycle(0)
+                    
+                    
+                    
+                    
             except:
                 label = detection.label
             cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)

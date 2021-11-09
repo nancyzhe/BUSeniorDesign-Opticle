@@ -16,9 +16,14 @@ Spatial detection network demo.
 '''
 #setup PI
 GPIO.setmode(GPIO.BOARD)
+#motor1
 GPIO.setup(8,GPIO.OUT)
 pwm = GPIO.PWM(8, 100)
 pwm.start(0)
+#motor2
+GPIO.setup(10,GPIO.OUT)
+pwm2 = GPIO.PWM(10, 100)
+pwm2.start(0)
 # Get argument first
 nnBlobPath = str((Path(__file__).parent / Path('../models/mobilenet-ssd_openvino_2021.4_6shave.blob')).resolve().absolute())
 if len(sys.argv) > 1:
@@ -163,12 +168,23 @@ with dai.Device(pipeline) as device:
                     print(detection.spatialCoordinates.z / 1000) # z-distance from object in m
             
                 
-                if label=="person":
+                if label=="person" and detection.spatialCoordinates.x<=0:
                     strength = detection.spatialCoordinates.z / 1000 * 20
                     pwm.ChangeDutyCycle(100-strength)
-                    print(100-strength)
+                    print("1 ",100-strength)
                 else:
                     pwm.ChangeDutyCycle(0)
+                    
+                    
+                if label=="person" and detection.spatialCoordinates.x>=0:
+                    strength2= detection.spatialCoordinates.z / 1000 * 20
+                    pwm2.ChangeDutyCycle(100-strength2)
+                    print("2 ",100-strength2)
+                    
+                else:
+                    pwm2.ChangeDutyCycle(0)
+                
+                    
             
             except:
                 label = detection.label
