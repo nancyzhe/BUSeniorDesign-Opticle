@@ -7,7 +7,12 @@ import depthai as dai
 import numpy as np
 import time
 import RPi.GPIO as GPIO
+from subprocess import Popen
 
+
+
+cmd_beg='espeak '
+cmd_end=' 2>/dev/null'
 '''
 Spatial Tiny-yolo example
   Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
@@ -193,20 +198,23 @@ with dai.Device(pipeline) as device:
                 
                 if detcount == 50: # send out label after n-1 detections
                     print(label) # label of object detected
-                    print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
+                    Popen([cmd_beg+label+cmd_end],shell=True)
                     
-                if label=="person" and detection.spatialCoordinates.x<=0:
+                    print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
+                
+                if label=="person" and detection.spatialCoordinates.x>=0:
                     strength = detection.spatialCoordinates.z / 1000 * 20
                     pwm.ChangeDutyCycle(100-strength)
                     print("1 ",100-strength)
+                    
                 else:
-                    pwm.ChangeDutyCycle(0)
+                    pwm.ChangeDutyCycle(0)                  
                     
-                    
-                if label=="person" and detection.spatialCoordinates.x>=0:
+                if label=="person" and detection.spatialCoordinates.x<=0:
                     strength2= detection.spatialCoordinates.z / 1000 * 20
                     pwm2.ChangeDutyCycle(100-strength2)
                     print("2 ",100-strength2)
+                    
                     
                 else:
                     pwm2.ChangeDutyCycle(0)

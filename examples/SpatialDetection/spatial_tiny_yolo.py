@@ -173,6 +173,7 @@ with dai.Device(pipeline) as device:
             y2 = int(detection.ymax * height)
             try:
                 label = labelMap[detection.label]
+                print(label)
             except:
                 label = detection.label
             cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
