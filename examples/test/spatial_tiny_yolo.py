@@ -11,7 +11,7 @@ from subprocess import Popen
 
 
 
-cmd_beg='espeak '
+cmd_start='espeak '
 cmd_end=' 2>/dev/null'
 '''
 Spatial Tiny-yolo example
@@ -23,13 +23,16 @@ Spatial Tiny-yolo example
 GPIO.setmode(GPIO.BOARD)
 #motor1
 GPIO.setup(8,GPIO.OUT)
-pwm = GPIO.PWM(8, 100)
-pwm.start(0)
+pwm2 = GPIO.PWM(8, 100)
+pwm2.start(0)
 #motor2
 GPIO.setup(10,GPIO.OUT)
-pwm2 = GPIO.PWM(10, 100)
-pwm2.start(0)
+pwm3 = GPIO.PWM(10, 100)
+pwm3.start(0)
 
+GPIO.setup(12,GPIO.OUT)
+pwm1=GPIO.PWM(12,100)
+pwm1.start(0)
 # Get argument first
 nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
 if 1 < len(sys.argv):
@@ -198,26 +201,33 @@ with dai.Device(pipeline) as device:
                 
                 if detcount == 50: # send out label after n-1 detections
                     print(label) # label of object detected
-                    Popen([cmd_beg+label+cmd_end],shell=True)
+                    Popen([cmd_start+label+cmd_end],shell=True)
                     
-                    print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
+                    #print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
                 
-                if label=="person" and detection.spatialCoordinates.x>=0:
+                if label=="person" and detection.spatialCoordinates.x>=333.33:
                     strength = detection.spatialCoordinates.z / 1000 * 20
-                    pwm.ChangeDutyCycle(100-strength)
-                    print("1 ",100-strength)
+                    pwm1.ChangeDutyCycle(100-strength)
+                    print("right",100-strength)
                     
                 else:
-                    pwm.ChangeDutyCycle(0)                  
+                    pwm1.ChangeDutyCycle(0)                  
                     
-                if label=="person" and detection.spatialCoordinates.x<=0:
+                if label=="person" and detection.spatialCoordinates.x<=-333.33:
                     strength2= detection.spatialCoordinates.z / 1000 * 20
                     pwm2.ChangeDutyCycle(100-strength2)
-                    print("2 ",100-strength2)
-                    
+                    print("left",100-strength2)
                     
                 else:
                     pwm2.ChangeDutyCycle(0)
+                
+                if label=="person" and detection.spatialCoordinates.x>-333.33 and detection.spatialCoordinates.x<333.33:
+                    strength3=detection.spatialCoordinates.z/1000*20
+                    pwm3.ChangeDutyCycle(100-strength3)
+                    print("center",100-strength3)
+                
+                else:
+                    pwm3.ChangeDutyCycle(0)
                     
                     
                     
