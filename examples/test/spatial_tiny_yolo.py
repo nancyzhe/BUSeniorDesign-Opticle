@@ -6,8 +6,10 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
-import RPi.GPIO as GPIO
+import open3d as o3d
+# import RPi.GPIO as GPIO
 from subprocess import Popen
+# import socket
 
 
 
@@ -19,20 +21,26 @@ Spatial Tiny-yolo example
   Can be used for tiny-yolo-v3 or tiny-yolo-v4 networks
 '''
 
-#setup PI
-GPIO.setmode(GPIO.BOARD)
-#motor1
-GPIO.setup(8,GPIO.OUT)
-pwm2 = GPIO.PWM(8, 100)
-pwm2.start(0)
-#motor2
-GPIO.setup(10,GPIO.OUT)
-pwm3 = GPIO.PWM(10, 100)
-pwm3.start(0)
+# setup socket
+# HOST = '155.41.122.253'
+# PORT = 2000
+# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# s.connect((HOST,PORT))
 
-GPIO.setup(12,GPIO.OUT)
-pwm1=GPIO.PWM(12,100)
-pwm1.start(0)
+#setup PI
+# GPIO.setmode(GPIO.BOARD)
+# #motor1
+# GPIO.setup(8,GPIO.OUT)
+# pwm2 = GPIO.PWM(8, 100)
+# pwm2.start(0)
+# #motor2
+# GPIO.setup(10,GPIO.OUT)
+# pwm3 = GPIO.PWM(10, 100)
+# pwm3.start(0)
+
+# GPIO.setup(12,GPIO.OUT)
+# pwm1=GPIO.PWM(12,100)
+# pwm1.start(0)
 # Get argument first
 nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
 if 1 < len(sys.argv):
@@ -68,6 +76,16 @@ labelMap = [
 
 syncNN = True
 
+###################PC
+extended = False
+out_depth = False
+out_rectified = True
+# Better accuracy for longer distance, fractional disparity 32-levels:
+subpixel = False
+# Better handling for occlusions:
+lr_check = True
+###################PC
+
 # Create pipeline
 pipeline = dai.Pipeline()
 
@@ -82,11 +100,13 @@ xoutRgb = pipeline.create(dai.node.XLinkOut)
 xoutNN = pipeline.create(dai.node.XLinkOut)
 xoutBoundingBoxDepthMapping = pipeline.create(dai.node.XLinkOut)
 xoutDepth = pipeline.create(dai.node.XLinkOut)
+xoutRight = pipeline.create(dai.node.XLinkOut)
 
 xoutRgb.setStreamName("rgb")
 xoutNN.setStreamName("detections")
 xoutBoundingBoxDepthMapping.setStreamName("boundingBoxDepthMapping")
 xoutDepth.setStreamName("depth")
+xoutRight.setStreamName("right")
 
 # Properties
 camRgb.setPreviewSize(416, 416)
@@ -119,6 +139,7 @@ spatialDetectionNetwork.setIouThreshold(0.5)
 # Linking
 monoLeft.out.link(stereo.left)
 monoRight.out.link(stereo.right)
+monoRight.out.link(xoutRight.input)
 
 camRgb.preview.link(spatialDetectionNetwork.input)
 if syncNN:
@@ -132,6 +153,22 @@ spatialDetectionNetwork.boundingBoxMapping.link(xoutBoundingBoxDepthMapping.inpu
 stereo.depth.link(spatialDetectionNetwork.inputDepth)
 spatialDetectionNetwork.passthroughDepth.link(xoutDepth.input)
 
+###################PC
+# Create a node that will produce the depth map (using disparity output as it's easier to visualize depth this way)
+stereo.initialConfig.setConfidenceThreshold(245)
+# Options: MEDIAN_OFF, KERNEL_3x3, KERNEL_5x5, KERNEL_7x7 (default)
+stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
+stereo.setLeftRightCheck(lr_check)
+stereo.setExtendedDisparity(extended)
+stereo.setSubpixel(subpixel)
+
+right = None
+pcl_converter = None
+vis = o3d.visualization.Visualizer()
+vis.create_window()
+isstarted = False
+###################PC
+
 # Connect to device and start pipeline
 with dai.Device(pipeline) as device:
 
@@ -140,6 +177,18 @@ with dai.Device(pipeline) as device:
     detectionNNQueue = device.getOutputQueue(name="detections", maxSize=4, blocking=False)
     xoutBoundingBoxDepthMappingQueue = device.getOutputQueue(name="boundingBoxDepthMapping", maxSize=4, blocking=False)
     depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
+
+    #################PC
+    qRight = device.getOutputQueue(name="right", maxSize=4, blocking=False)
+
+    try:
+        from projector_3d import PointCloudVisualizer
+    except ImportError as e:
+        raise ImportError(f"\033[1;5;31mError occured when importing PCL projector: {e}. Try disabling the point cloud \033[0m ")
+    calibData = device.readCalibration()
+    right_intrinsic = np.array(calibData.getCameraIntrinsics(dai.CameraBoardSocket.RIGHT, 640, 400))
+    pcl_converter = PointCloudVisualizer(right_intrinsic, 640, 400)
+    #################PC
 
     startTime = time.monotonic()
     counter = 0
@@ -246,5 +295,44 @@ with dai.Device(pipeline) as device:
         cv2.imshow("depth", depthFrameColor)
         cv2.imshow("rgb", frame)
 
+        #########################PC
+        corners = np.asarray([[-0.5,-1.0,0.35],[0.5,-1.0,0.35],[0.5,1.0,0.35],[-0.5,1.0,0.35],[-0.5,-1.0,1.7],[0.5,-1.0,1.7],[0.5,1.0,1.7],[-0.5,1.0,1.7]])
+        
+        bounds = corners.astype("float64")
+        bounds = o3d.utility.Vector3dVector(bounds)
+        oriented_bounding_box = o3d.geometry.OrientedBoundingBox.create_from_points(bounds)
+        
+        inRight = qRight.get()
+        right = inRight.getFrame()
+
+        frame = depth.getFrame()
+        median = cv2.medianBlur(frame, 5)
+        median2 = cv2.medianBlur(median,5)
+
+        pcd = pcl_converter.rgbd_to_projection(median, right,False)
+
+        #to get points within bounding box
+        num_pts = oriented_bounding_box.get_point_indices_within_bounding_box(pcd.points)
+
+
+        if not isstarted:
+            vis.add_geometry(pcd)
+            vis.add_geometry(oriented_bounding_box)
+            isstarted = True       
+                        
+        else:
+            vis.update_geometry(pcd)
+            vis.update_geometry(oriented_bounding_box)
+            vis.poll_events()
+            vis.update_renderer()
+        if len(num_pts)>5000:
+            print("Obstacle")
+            # s.send(bytes('1','utf-8'))
+        else:
+            print("Nothing")
+            # s.send(bytes('0','utf-8'))
+
         if cv2.waitKey(1) == ord('q'):
             break
+    if pcl_converter is not None:
+        pcl_converter.close_window()

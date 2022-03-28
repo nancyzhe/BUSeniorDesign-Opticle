@@ -8,24 +8,24 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
-import RPi.GPIO as GPIO
+# import RPi.GPIO as GPIO
 
 '''
 Spatial detection network demo.
     Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
 '''
 #setup PI
-GPIO.setmode(GPIO.BOARD)
-#motor1
-GPIO.setup(8,GPIO.OUT)
-pwm = GPIO.PWM(8, 100)
-pwm.start(0)
-#motor2
-GPIO.setup(10,GPIO.OUT)
-pwm2 = GPIO.PWM(10, 100)
-pwm2.start(0)
+# GPIO.setmode(GPIO.BOARD)
+# #motor1
+# GPIO.setup(8,GPIO.OUT)
+# pwm = GPIO.PWM(8, 100)
+# pwm.start(0)
+# #motor2
+# GPIO.setup(10,GPIO.OUT)
+# pwm2 = GPIO.PWM(10, 100)
+# pwm2.start(0)
 # Get argument first
-nnBlobPath = str((Path(__file__).parent / Path('../models/mobilenet-ssd_openvino_2021.4_6shave.blob')).resolve().absolute())
+nnBlobPath = str((Path(__file__).parent / Path('../models/custom_mobilenet.blob')).resolve().absolute())
 if len(sys.argv) > 1:
     nnBlobPath = sys.argv[1]
 
@@ -34,9 +34,10 @@ if not Path(nnBlobPath).exists():
     raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
 
 # MobilenetSSD label texts
-labelMap = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
-            "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
-
+# labelMap = ["background", "aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow",
+#             "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"]
+labelMap = ["door", "handle"]
+#  "fender", "gascap”, “handle", "headlight", "hood", "licenseplate", "logo" , "mirror", "rim", "roofrack", "taillight", "wheel", "window", "windshield", "wiper"]
 syncNN = True
 
 # Create pipeline
@@ -162,27 +163,27 @@ with dai.Device(pipeline) as device:
             
             
             try:
-                label = labelMap[detection.label] # label is the output the system prints when it identifies an object
+                label = labelMap[detection.label-1] # label is the output the system prints when it identifies an object
                 if detcount == 50: # send out label after n-1 detections
                     print(label) # label of object detected
                     print(detection.spatialCoordinates.z / 1000) # z-distance from object in m
             
                 
-                if label=="person" and detection.spatialCoordinates.x<=0:
-                    strength = detection.spatialCoordinates.z / 1000 * 20
-                    pwm.ChangeDutyCycle(100-strength)
-                    print("1 ",100-strength)
-                else:
-                    pwm.ChangeDutyCycle(0)
+                # if label=="person" and detection.spatialCoordinates.x<=0:
+                #     strength = detection.spatialCoordinates.z / 1000 * 20
+                #     # pwm.ChangeDutyCycle(100-strength)
+                #     print("1 ",100-strength)
+                # else:
+                #     pwm.ChangeDutyCycle(0)
                     
                     
-                if label=="person" and detection.spatialCoordinates.x>=0:
-                    strength2= detection.spatialCoordinates.z / 1000 * 20
-                    pwm2.ChangeDutyCycle(100-strength2)
-                    print("2 ",100-strength2)
+                # if label=="person" and detection.spatialCoordinates.x>=0:
+                #     strength2= detection.spatialCoordinates.z / 1000 * 20
+                #     # pwm2.ChangeDutyCycle(100-strength2)
+                #     print("2 ",100-strength2)
                     
-                else:
-                    pwm2.ChangeDutyCycle(0)
+                # else:
+                #     pwm2.ChangeDutyCycle(0)
                 
                     
             
