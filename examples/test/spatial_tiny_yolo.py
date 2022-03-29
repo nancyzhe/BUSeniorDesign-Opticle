@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#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
 
 from pathlib import Path
 import sys
@@ -6,12 +7,15 @@ import cv2
 import depthai as dai
 import numpy as np
 import time
+from datetime import datetime
 import open3d as o3d
 # import RPi.GPIO as GPIO
 from subprocess import Popen
 # import socket
 
 
+start=datetime.now()
+#start_time=now.strftime("%H:%M:%S")
 
 cmd_start='espeak '
 cmd_end=' 2>/dev/null'
@@ -248,39 +252,26 @@ with dai.Device(pipeline) as device:
             try:
                 label = labelMap[detection.label]
                 
-                if detcount == 50: # send out label after n-1 detections
+                current=datetime.now()
+                diff=current-start
+                if ((diff.seconds%5==0) and (detection.confidence>10)): # send out label after n-1 detections
                     print(label) # label of object detected
-                    Popen([cmd_start+label+cmd_end],shell=True)
+                    print(detection.confidence)
+                    print(diff.seconds)
                     
+                    
+                    vdistance=str(round((detection.spatialCoordinates.z/1000),1))
+                    hdistance=str(abs(round((detection.spatialCoordinates.x/1000),1)))
+                    vd=("m"+"front")
+                    Popen([cmd_start+label+vdistance+vd+cmd_end],shell=True)
+                    if detection.spatialCoordinates.x <=0:
+                        ld=("m"+"left")
+                        Popen([cmd_start+label+vdistance+vd+hdistance+ld+cmd_end],shell=True)
+                    elif detection.spatialCoordinates.x >0:
+                        rd=("m"+"right")
+                        Popen([cmd_start+label+vdistance+vd+hdistance+rd+cmd_end],shell=True)
                     #print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
-                
-                if label=="person" and detection.spatialCoordinates.x>=333.33:
-                    strength = detection.spatialCoordinates.z / 1000 * 20
-                    pwm1.ChangeDutyCycle(100-strength)
-                    print("right",100-strength)
-                    
-                else:
-                    pwm1.ChangeDutyCycle(0)                  
-                    
-                if label=="person" and detection.spatialCoordinates.x<=-333.33:
-                    strength2= detection.spatialCoordinates.z / 1000 * 20
-                    pwm2.ChangeDutyCycle(100-strength2)
-                    print("left",100-strength2)
-                    
-                else:
-                    pwm2.ChangeDutyCycle(0)
-                
-                if label=="person" and detection.spatialCoordinates.x>-333.33 and detection.spatialCoordinates.x<333.33:
-                    strength3=detection.spatialCoordinates.z/1000*20
-                    pwm3.ChangeDutyCycle(100-strength3)
-                    print("center",100-strength3)
-                
-                else:
-                    pwm3.ChangeDutyCycle(0)
-                    
-                    
-                    
-                    
+             
             except:
                 label = detection.label
             cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
