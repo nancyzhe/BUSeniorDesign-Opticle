@@ -9,9 +9,10 @@ import numpy as np
 import time
 from datetime import datetime
 import open3d as o3d
-# import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 from subprocess import Popen
-# import socket
+import speech_recognition as sr
+import socket
 
 
 start=datetime.now()
@@ -19,6 +20,7 @@ start=datetime.now()
 
 cmd_start='espeak '
 cmd_end=' 2>/dev/null'
+speed=' -s' + '130'
 '''
 Spatial Tiny-yolo example
   Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
@@ -26,13 +28,16 @@ Spatial Tiny-yolo example
 '''
 
 # setup socket
-# HOST = '155.41.122.253'
-# PORT = 2000
-# s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# s.connect((HOST,PORT))
+HOST = '172.20.10.11'
+PORT = 2100
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST,PORT))
 
 #setup PI
-# GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BOARD)
+# setup mode switch
+modeswitchpin = 3
+GPIO.setup(modeswitchpin, GPIO.IN)
 # #motor1
 # GPIO.setup(8,GPIO.OUT)
 # pwm2 = GPIO.PWM(8, 100)
@@ -198,132 +203,171 @@ with dai.Device(pipeline) as device:
     counter = 0
     fps = 0
     color = (255, 255, 255)
-    detcount = 0
-
+    mode = 0
+    
     while True:
-        inPreview = previewQueue.get()
-        inDet = detectionNNQueue.get()
-        depth = depthQueue.get()
+        saidtext=''
+        if (GPIO.input(modeswitchpin) == 1 and mode == 1):
+            r = sr.Recognizer()
+            with sr.Microphone(device_index=6) as source:
+                print("You have entered the scanning mode:")
+                prompt='Say'+'object'
+                Popen([cmd_start+prompt+speed+cmd_end],shell=True)
+                audio=r.adjust_for_ambient_noise(source)
+                audio=r.listen(source)
+            
 
-        frame = inPreview.getCvFrame()
-        depthFrame = depth.getFrame()
-        depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
-        depthFrameColor = cv2.equalizeHist(depthFrameColor)
-        depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
-
-        counter+=1
-        current_time = time.monotonic()
-        if (current_time - startTime) > 1 :
-            fps = counter / (current_time - startTime)
-            counter = 0
-            startTime = current_time
-
-        detections = inDet.detections
-        if len(detections) != 0:
-            boundingBoxMapping = xoutBoundingBoxDepthMappingQueue.get()
-            roiDatas = boundingBoxMapping.getConfigData()
-
-            for roiData in roiDatas:
-                roi = roiData.roi
-                roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
-                topLeft = roi.topLeft()
-                bottomRight = roi.bottomRight()
-                xmin = int(topLeft.x)
-                ymin = int(topLeft.y)
-                xmax = int(bottomRight.x)
-                ymax = int(bottomRight.y)
-
-                cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
-
-
-        # If the frame is available, draw bounding boxes on it and show the frame
-        height = frame.shape[0]
-        width  = frame.shape[1]
-        for detection in detections:
-            # Denormalize bounding box
-            if detcount < 51: # check if less than n detections have been made
-                detcount += 1
-            else:
-                detcount = 0
-            x1 = int(detection.xmin * width)
-            x2 = int(detection.xmax * width)
-            y1 = int(detection.ymin * height)
-            y2 = int(detection.ymax * height)
             try:
-                label = labelMap[detection.label]
+                text=r.recognize_google(audio)
+                print("You said: " + text)
+                if (text not in labelMap):
+                    errormessage='Try'+'again'
+                    Popen([cmd_start+errormessage+speed+cmd_end],shell=True)
+                else:
+                    saidtext=text
+                    confirm='Scanning'+'for'
+                    Popen([cmd_start+confirm+saidtext+speed+cmd_end],shell=True)
+            except sr.UnknownValueError:
+                print('Sorry could not recognize voice')
+                errormessage='Try'+'again'
+                Popen([cmd_start+errormessage+speed+cmd_end],shell=True)
+            except sr.RequestError as e:
+                print("error 2")
                 
-                current=datetime.now()
-                diff=current-start
-                if ((diff.seconds%5==0) and (detection.confidence>10)): # send out label after n-1 detections
-                    print(label) # label of object detected
-                    print(detection.confidence)
-                    print(diff.seconds)
-                    
-                    
-                    vdistance=str(round((detection.spatialCoordinates.z/1000),1))
-                    hdistance=str(abs(round((detection.spatialCoordinates.x/1000),1)))
-                    vd=("m"+"front")
-                    Popen([cmd_start+label+vdistance+vd+cmd_end],shell=True)
-                    if detection.spatialCoordinates.x <=0:
-                        ld=("m"+"left")
-                        Popen([cmd_start+label+vdistance+vd+hdistance+ld+cmd_end],shell=True)
-                    elif detection.spatialCoordinates.x >0:
-                        rd=("m"+"right")
-                        Popen([cmd_start+label+vdistance+vd+hdistance+rd+cmd_end],shell=True)
-                    #print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
-             
-            except:
-                label = detection.label
-            cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
-            cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+            
 
-            cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
+        while True:
+            
+            inPreview = previewQueue.get()
+            inDet = detectionNNQueue.get()
+            depth = depthQueue.get()
 
-        cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
-        cv2.imshow("depth", depthFrameColor)
-        cv2.imshow("rgb", frame)
+            frame = inPreview.getCvFrame()
+            depthFrame = depth.getFrame()
+            depthFrameColor = cv2.normalize(depthFrame, None, 255, 0, cv2.NORM_INF, cv2.CV_8UC1)
+            depthFrameColor = cv2.equalizeHist(depthFrameColor)
+            depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
+            if (GPIO.input(modeswitchpin) == 1):
+                counter+=1
+                current_time = time.monotonic()
+                if (current_time - startTime) > 1 :
+                    fps = counter / (current_time - startTime)
+                    counter = 0
+                    startTime = current_time
 
-        #########################PC
-        corners = np.asarray([[-0.5,-1.0,0.35],[0.5,-1.0,0.35],[0.5,1.0,0.35],[-0.5,1.0,0.35],[-0.5,-1.0,1.7],[0.5,-1.0,1.7],[0.5,1.0,1.7],[-0.5,1.0,1.7]])
-        
-        bounds = corners.astype("float64")
-        bounds = o3d.utility.Vector3dVector(bounds)
-        oriented_bounding_box = o3d.geometry.OrientedBoundingBox.create_from_points(bounds)
-        
-        inRight = qRight.get()
-        right = inRight.getFrame()
+                detections = inDet.detections
+                if len(detections) != 0:
+                    boundingBoxMapping = xoutBoundingBoxDepthMappingQueue.get()
+                    roiDatas = boundingBoxMapping.getConfigData()
 
-        frame = depth.getFrame()
-        median = cv2.medianBlur(frame, 5)
-        median2 = cv2.medianBlur(median,5)
+                    for roiData in roiDatas:
+                        roi = roiData.roi
+                        roi = roi.denormalize(depthFrameColor.shape[1], depthFrameColor.shape[0])
+                        topLeft = roi.topLeft()
+                        bottomRight = roi.bottomRight()
+                        xmin = int(topLeft.x)
+                        ymin = int(topLeft.y)
+                        xmax = int(bottomRight.x)
+                        ymax = int(bottomRight.y)
 
-        pcd = pcl_converter.rgbd_to_projection(median, right,False)
-
-        #to get points within bounding box
-        num_pts = oriented_bounding_box.get_point_indices_within_bounding_box(pcd.points)
+                        cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, cv2.FONT_HERSHEY_SCRIPT_SIMPLEX)
 
 
-        if not isstarted:
-            vis.add_geometry(pcd)
-            vis.add_geometry(oriented_bounding_box)
-            isstarted = True       
+                # If the frame is available, draw bounding boxes on it and show the frame
+                height = frame.shape[0]
+                width  = frame.shape[1]
+                for detection in detections:
+                    # Denormalize bounding box
+
+                    x1 = int(detection.xmin * width)
+                    x2 = int(detection.xmax * width)
+                    y1 = int(detection.ymin * height)
+                    y2 = int(detection.ymax * height)
+                    try:
+                        label = labelMap[detection.label]
                         
-        else:
-            vis.update_geometry(pcd)
-            vis.update_geometry(oriented_bounding_box)
-            vis.poll_events()
-            vis.update_renderer()
-        if len(num_pts)>5000:
-            print("Obstacle")
-            # s.send(bytes('1','utf-8'))
-        else:
-            print("Nothing")
-            # s.send(bytes('0','utf-8'))
+                        current=datetime.now()
+                        diff=current-start
+                        if ((saidtext==label) and (int(diff.seconds)%5==0) and (detection.confidence>10)): # send out label after n-1 detections
+                            print(label) # label of object detected
+                            
+                            print(detection.confidence)
+                            print(diff.seconds)
+                            
+                            
+                            vdistance=str(round((detection.spatialCoordinates.z/1000)*3.28,1))
+                            hdistance=str(abs(round((detection.spatialCoordinates.x/1000)*3.28,1)))
+                            vd=("feet"+"front")
+                            Popen([cmd_start+label+vdistance+vd+speed+cmd_end],shell=True)
+                            if detection.spatialCoordinates.x <=0:
+                                ld=("feet"+"left")
+                                Popen([cmd_start+label+vdistance+vd+hdistance+ld+speed+cmd_end],shell=True)
+                            elif detection.spatialCoordinates.x >0:
+                                rd=("feet"+"right")
+                                Popen([cmd_start+label+vdistance+vd+hdistance+rd+speed+cmd_end],shell=True)
+                            #print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
+                            time.sleep(5)
+                    except:
+                        label = detection.label
+                    cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                    cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                    cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                    cv2.putText(frame, f"Y: {int(detection.spatialCoordinates.y)} mm", (x1 + 10, y1 + 65), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
+                    cv2.putText(frame, f"Z: {int(detection.spatialCoordinates.z)} mm", (x1 + 10, y1 + 80), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
 
-        if cv2.waitKey(1) == ord('q'):
-            break
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
+
+                cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
+                cv2.imshow("depth", depthFrameColor)
+                cv2.imshow("rgb", frame)
+                
+
+            #########################PC
+            corners = np.asarray([[-0.5,-1.0,0.35],[0.5,-1.0,0.35],[0.5,1.0,0.35],[-0.5,1.0,0.35],[-0.5,-1.0,1.7],[0.5,-1.0,1.7],[0.5,1.0,1.7],[-0.5,1.0,1.7]])
+            
+            bounds = corners.astype("float64")
+            bounds = o3d.utility.Vector3dVector(bounds)
+            oriented_bounding_box = o3d.geometry.OrientedBoundingBox.create_from_points(bounds)
+            
+            inRight = qRight.get()
+            right = inRight.getFrame()
+
+            frame = depth.getFrame()
+            median = cv2.medianBlur(frame, 5)
+            median2 = cv2.medianBlur(median,5)
+
+            pcd = pcl_converter.rgbd_to_projection(median, right,False)
+
+            #to get points within bounding box
+            num_pts = oriented_bounding_box.get_point_indices_within_bounding_box(pcd.points)
+
+
+            if not isstarted:
+                vis.add_geometry(pcd)
+                vis.add_geometry(oriented_bounding_box)
+                isstarted = True       
+                            
+            else:
+                vis.update_geometry(pcd)
+                vis.update_geometry(oriented_bounding_box)
+                vis.poll_events()
+                vis.update_renderer()
+            if len(num_pts)>5000:
+                print("Obstacle")
+                s.send(bytes('1','utf-8'))
+            else:
+                print("Nothing")
+                s.send(bytes('0','utf-8'))
+
+            if cv2.waitKey(1) == ord('q'):
+                break
+            if (GPIO.input(modeswitchpin) == 1 and mode == 0):
+                mode = 1
+                break
+            if (GPIO.input(modeswitchpin) == 0):
+                    mode = 0    
+                
+            
+             
     if pcl_converter is not None:
         pcl_converter.close_window()
