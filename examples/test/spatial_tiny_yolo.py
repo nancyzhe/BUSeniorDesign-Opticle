@@ -15,12 +15,14 @@ import speech_recognition as sr
 import socket
 
 
-start=datetime.now()
-#start_time=now.strftime("%H:%M:%S")
 
+#start_time=now.strftime("%H:%M:%S")
+yolo=1
+first_time=0
 cmd_start='espeak '
 cmd_end=' 2>/dev/null'
 speed=' -s' + '130'
+ep=3
 '''
 Spatial Tiny-yolo example
   Performs inference on RGB camera and retrieves spatial location coordinates: x,y,z relative to the center of depth map.
@@ -28,10 +30,10 @@ Spatial Tiny-yolo example
 '''
 
 # setup socket
-HOST = '172.20.10.11'
-PORT = 2100
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect((HOST,PORT))
+#HOST = '172.20.10.11'
+#PORT = 2000
+#s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#s.connect((HOST,PORT))
 
 #setup PI
 GPIO.setmode(GPIO.BOARD)
@@ -51,38 +53,42 @@ GPIO.setup(modeswitchpin, GPIO.IN)
 # pwm1=GPIO.PWM(12,100)
 # pwm1.start(0)
 # Get argument first
-nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
-if 1 < len(sys.argv):
-    arg = sys.argv[1]
-    if arg == "yolo3":
-        nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v3-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
-    elif arg == "yolo4":
-        nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+if (yolo == 1):
+    nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+    if 1 < len(sys.argv):
+        arg = sys.argv[1]
+        if arg == "yolo3":
+            nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v3-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+        elif arg == "yolo4":
+            nnBlobPath = str((Path(__file__).parent / Path('../models/yolo-v4-tiny-tf_openvino_2021.4_6shave.blob')).resolve().absolute())
+        else:
+            nnBlobPath = arg
     else:
-        nnBlobPath = arg
+        print("Using Tiny YoloV4 model. If you wish to use Tiny YOLOv3, call 'tiny_yolo.py yolo3'")
+
+    if not Path(nnBlobPath).exists():
+        import sys
+        raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
+
+    # Tiny yolo v3/4 label texts
+    labelMap = [
+        "person",         "bicycle",    "car",           "motorbike",     "aeroplane",   "bus",           "train",
+        "truck",          "boat",       "traffic light", "fire hydrant",  "stop sign",   "parking meter", "bench",
+        "bird",           "cat",        "dog",           "horse",         "sheep",       "cow",           "elephant",
+        "bear",           "zebra",      "giraffe",       "backpack",      "umbrella",    "handbag",       "tie",
+        "suitcase",       "frisbee",    "skis",          "snowboard",     "sports ball", "kite",          "baseball bat",
+        "baseball glove", "skateboard", "surfboard",     "tennis racket", "bottle",      "wine glass",    "cup",
+        "fork",           "knife",      "spoon",         "bowl",          "banana",      "apple",         "sandwich",
+        "orange",         "broccoli",   "carrot",        "hot dog",       "pizza",       "donut",         "cake",
+        "chair",          "sofa",       "pottedplant",   "bed",           "diningtable", "toilet",        "tvmonitor",
+        "laptop",         "mouse",      "remote",        "keyboard",      "cell phone",  "microwave",     "oven",
+        "toaster",        "sink",       "refrigerator",  "book",          "clock",       "vase",          "scissors",
+        "teddy bear",     "hair drier", "toothbrush"
+    ]
 else:
-    print("Using Tiny YoloV4 model. If you wish to use Tiny YOLOv3, call 'tiny_yolo.py yolo3'")
-
-if not Path(nnBlobPath).exists():
-    import sys
-    raise FileNotFoundError(f'Required file/s not found, please run "{sys.executable} install_requirements.py"')
-
-# Tiny yolo v3/4 label texts
-labelMap = [
-    "person",         "bicycle",    "car",           "motorbike",     "aeroplane",   "bus",           "train",
-    "truck",          "boat",       "traffic light", "fire hydrant",  "stop sign",   "parking meter", "bench",
-    "bird",           "cat",        "dog",           "horse",         "sheep",       "cow",           "elephant",
-    "bear",           "zebra",      "giraffe",       "backpack",      "umbrella",    "handbag",       "tie",
-    "suitcase",       "frisbee",    "skis",          "snowboard",     "sports ball", "kite",          "baseball bat",
-    "baseball glove", "skateboard", "surfboard",     "tennis racket", "bottle",      "wine glass",    "cup",
-    "fork",           "knife",      "spoon",         "bowl",          "banana",      "apple",         "sandwich",
-    "orange",         "broccoli",   "carrot",        "hot dog",       "pizza",       "donut",         "cake",
-    "chair",          "sofa",       "pottedplant",   "bed",           "diningtable", "toilet",        "tvmonitor",
-    "laptop",         "mouse",      "remote",        "keyboard",      "cell phone",  "microwave",     "oven",
-    "toaster",        "sink",       "refrigerator",  "book",          "clock",       "vase",          "scissors",
-    "teddy bear",     "hair drier", "toothbrush"
-]
-
+    nnBlobPath = str((Path(__file__).parent / Path('../models/custom_mobilenet.blob')).resolve().absolute())
+    labelMap = ["","door", "handle"]
+    
 syncNN = True
 
 ###################PC
@@ -100,7 +106,11 @@ pipeline = dai.Pipeline()
 
 # Define sources and outputs
 camRgb = pipeline.create(dai.node.ColorCamera)
-spatialDetectionNetwork = pipeline.create(dai.node.YoloSpatialDetectionNetwork)
+if (yolo ==1):
+    spatialDetectionNetwork = pipeline.create(dai.node.YoloSpatialDetectionNetwork)
+else:
+    spatialDetectionNetwork = pipeline.create(dai.node.MobileNetSpatialDetectionNetwork)
+
 monoLeft = pipeline.create(dai.node.MonoCamera)
 monoRight = pipeline.create(dai.node.MonoCamera)
 stereo = pipeline.create(dai.node.StereoDepth)
@@ -118,7 +128,10 @@ xoutDepth.setStreamName("depth")
 xoutRight.setStreamName("right")
 
 # Properties
-camRgb.setPreviewSize(416, 416)
+if (yolo == 1):
+    camRgb.setPreviewSize(416, 416)
+else:
+    camRgb.setPreviewSize(300, 300)
 camRgb.setResolution(dai.ColorCameraProperties.SensorResolution.THE_1080_P)
 camRgb.setInterleaved(False)
 camRgb.setColorOrder(dai.ColorCameraProperties.ColorOrder.BGR)
@@ -286,16 +299,16 @@ with dai.Device(pipeline) as device:
                     try:
                         label = labelMap[detection.label]
                         
-                        current=datetime.now()
-                        diff=current-start
-                        if ((saidtext==label) and (int(diff.seconds)%5==0) and (detection.confidence>10)): # send out label after n-1 detections
+                        
+                        
+                        if ((saidtext==label) and (first_time==0) and (detection.confidence>10)): # send out label after n-1 detections
                             print(label) # label of object detected
-                            
                             print(detection.confidence)
-                            print(diff.seconds)
-                            
+                            first_time=1
+                            start=datetime.now()
                             
                             vdistance=str(round((detection.spatialCoordinates.z/1000)*3.28,1))
+                            last_announce_dist=round((detection.spatialCoordinates.z/1000)*3.28,1)
                             hdistance=str(abs(round((detection.spatialCoordinates.x/1000)*3.28,1)))
                             vd=("feet"+"front")
                             Popen([cmd_start+label+vdistance+vd+speed+cmd_end],shell=True)
@@ -305,8 +318,31 @@ with dai.Device(pipeline) as device:
                             elif detection.spatialCoordinates.x >0:
                                 rd=("feet"+"right")
                                 Popen([cmd_start+label+vdistance+vd+hdistance+rd+speed+cmd_end],shell=True)
+                            print('#############1')
                             #print(detection.spatialCoordinates.z / 1000, "m") # z-distance from object in m
-                            time.sleep(5)
+                            #time.sleep(5)
+                        elif((saidtext==label) and (detection.confidence>10) and (first_time==1) and abs(last_announce_dist-round((detection.spatialCoordinates.z/1000)*3.28,1))>ep):
+                            start=datetime.now()
+                            print('#############2')
+                            print (last_announce_dist)
+                            print(abs(last_announce_dist-round((detection.spatialCoordinates.z/1000)*3.28,1)))
+                            vdistance=str(round((detection.spatialCoordinates.z/1000)*3.28,1))
+                            last_announce_dist=round((detection.spatialCoordinates.z/1000)*3.28,1)
+                            hdistance=str(abs(round((detection.spatialCoordinates.x/1000)*3.28,1)))
+                            vd=("feet"+"front")
+                            Popen([cmd_start+label+vdistance+vd+speed+cmd_end],shell=True)
+                            if detection.spatialCoordinates.x <=0:
+                                ld=("feet"+"left")
+                                Popen([cmd_start+label+vdistance+vd+hdistance+ld+speed+cmd_end],shell=True)
+                            elif detection.spatialCoordinates.x >0:
+                                rd=("feet"+"right")
+                                Popen([cmd_start+label+vdistance+vd+hdistance+rd+speed+cmd_end],shell=True)
+                        elif((datetime.now()-start).seconds>15):
+                            print((datetime.now()-start).seconds)
+                            start=datetime.now()
+                            first_time=0
+                            print('#############3')
+                                
                     except:
                         label = detection.label
                     cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
@@ -354,10 +390,10 @@ with dai.Device(pipeline) as device:
                 vis.update_renderer()
             if len(num_pts)>5000:
                 print("Obstacle")
-                s.send(bytes('1','utf-8'))
+                #s.send(bytes('1','utf-8'))
             else:
                 print("Nothing")
-                s.send(bytes('0','utf-8'))
+                #s.send(bytes('0','utf-8'))
 
             if cv2.waitKey(1) == ord('q'):
                 break
