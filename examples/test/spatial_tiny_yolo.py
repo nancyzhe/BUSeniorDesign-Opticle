@@ -17,7 +17,7 @@ import socket
 
 
 #start_time=now.strftime("%H:%M:%S")
-yolo=1
+yolo=0
 first_time=0
 cmd_start='espeak '
 cmd_end=' 2>/dev/null'
@@ -30,11 +30,12 @@ Spatial Tiny-yolo example
 '''
 
 # setup socket
-#HOST = '172.20.10.11'
-#PORT = 2000
-#s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#s.connect((HOST,PORT))
-
+'''
+HOST = '172.20.10.11'
+PORT = 2100
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST,PORT))
+'''
 #setup PI
 GPIO.setmode(GPIO.BOARD)
 # setup mode switch
@@ -87,7 +88,8 @@ if (yolo == 1):
     ]
 else:
     nnBlobPath = str((Path(__file__).parent / Path('../models/custom_mobilenet.blob')).resolve().absolute())
-    labelMap = ["","door", "handle"]
+    labelMap = ["hello","door", "handle"]
+print(labelMap)
     
 syncNN = True
 
@@ -152,11 +154,12 @@ spatialDetectionNetwork.setDepthLowerThreshold(100)
 spatialDetectionNetwork.setDepthUpperThreshold(5000)
 
 # Yolo specific parameters
-spatialDetectionNetwork.setNumClasses(80)
-spatialDetectionNetwork.setCoordinateSize(4)
-spatialDetectionNetwork.setAnchors(np.array([10,14, 23,27, 37,58, 81,82, 135,169, 344,319]))
-spatialDetectionNetwork.setAnchorMasks({ "side26": np.array([1,2,3]), "side13": np.array([3,4,5]) })
-spatialDetectionNetwork.setIouThreshold(0.5)
+if(yolo==1):
+    spatialDetectionNetwork.setNumClasses(80)
+    spatialDetectionNetwork.setCoordinateSize(4)
+    spatialDetectionNetwork.setAnchors(np.array([10,14, 23,27, 37,58, 81,82, 135,169, 344,319]))
+    spatialDetectionNetwork.setAnchorMasks({ "side26": np.array([1,2,3]), "side13": np.array([3,4,5]) })
+    spatialDetectionNetwork.setIouThreshold(0.5)
 
 # Linking
 monoLeft.out.link(stereo.left)
@@ -221,6 +224,7 @@ with dai.Device(pipeline) as device:
     while True:
         saidtext=''
         if (GPIO.input(modeswitchpin) == 1 and mode == 1):
+            '''
             r = sr.Recognizer()
             with sr.Microphone(device_index=6) as source:
                 print("You have entered the scanning mode:")
@@ -228,10 +232,11 @@ with dai.Device(pipeline) as device:
                 Popen([cmd_start+prompt+speed+cmd_end],shell=True)
                 audio=r.adjust_for_ambient_noise(source)
                 audio=r.listen(source)
-            
+            '''
 
             try:
-                text=r.recognize_google(audio)
+                #text=r.recognize_google(audio)
+                text="handle"
                 print("You said: " + text)
                 if (text not in labelMap):
                     errormessage='Try'+'again'
@@ -298,10 +303,10 @@ with dai.Device(pipeline) as device:
                     y2 = int(detection.ymax * height)
                     try:
                         label = labelMap[detection.label]
+                        start=datetime.now()
                         
                         
-                        
-                        if ((saidtext==label) and (first_time==0) and (detection.confidence>10)): # send out label after n-1 detections
+                        if ((saidtext==label) and (first_time==0) and (detection.confidence>0.5)): # send out label after n-1 detections
                             print(label) # label of object detected
                             print(detection.confidence)
                             first_time=1
@@ -344,7 +349,7 @@ with dai.Device(pipeline) as device:
                             print('#############3')
                                 
                     except:
-                        label = detection.label
+                       label = detection.label
                     cv2.putText(frame, str(label), (x1 + 10, y1 + 20), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
                     cv2.putText(frame, "{:.2f}".format(detection.confidence*100), (x1 + 10, y1 + 35), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
                     cv2.putText(frame, f"X: {int(detection.spatialCoordinates.x)} mm", (x1 + 10, y1 + 50), cv2.FONT_HERSHEY_TRIPLEX, 0.5, 255)
