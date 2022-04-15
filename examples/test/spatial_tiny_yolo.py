@@ -17,11 +17,12 @@ import socket
 
 
 #start_time=now.strftime("%H:%M:%S")
-yolo=0
+yolo=1
 first_time=0
-cmd_start='espeak '
+cmd_start='espeak -ven-us+f1 '
 cmd_end=' 2>/dev/null'
-speed=' -s' + '130'
+speed=' -s' + '160'
+# speed=''
 ep=3
 '''
 Spatial Tiny-yolo example
@@ -225,6 +226,10 @@ with dai.Device(pipeline) as device:
         saidtext=''
         if (GPIO.input(modeswitchpin) == 1 and mode == 1):
             '''
+            confirm='Scanning'+'for'
+            Popen([cmd_start+confirm+saidtext+speed+cmd_end],shell=True)
+            
+            '''
             r = sr.Recognizer()
             with sr.Microphone(device_index=6) as source:
                 print("You have entered the scanning mode:")
@@ -232,11 +237,13 @@ with dai.Device(pipeline) as device:
                 Popen([cmd_start+prompt+speed+cmd_end],shell=True)
                 audio=r.adjust_for_ambient_noise(source)
                 audio=r.listen(source)
-            '''
-
+            
+            
             try:
-                #text=r.recognize_google(audio)
-                text="handle"
+                
+            
+                text = r.recognize_google(audio)
+                
                 print("You said: " + text)
                 if (text not in labelMap):
                     errormessage='Try'+'again'
@@ -306,7 +313,7 @@ with dai.Device(pipeline) as device:
                         start=datetime.now()
                         
                         
-                        if ((saidtext==label) and (first_time==0) and (detection.confidence>0.5)): # send out label after n-1 detections
+                        if ((saidtext==label) and (first_time==0) and (detection.confidence>10)): # send out label after n-1 detections
                             print(label) # label of object detected
                             print(detection.confidence)
                             first_time=1
@@ -359,8 +366,8 @@ with dai.Device(pipeline) as device:
                     cv2.rectangle(frame, (x1, y1), (x2, y2), color, cv2.FONT_HERSHEY_SIMPLEX)
 
                 cv2.putText(frame, "NN fps: {:.2f}".format(fps), (2, frame.shape[0] - 4), cv2.FONT_HERSHEY_TRIPLEX, 0.4, color)
-                cv2.imshow("depth", depthFrameColor)
-                cv2.imshow("rgb", frame)
+#               #cv2.imshow("depth", depthFrameColor)
+                #cv2.imshow("rgb", frame)
                 
 
             #########################PC
@@ -395,10 +402,10 @@ with dai.Device(pipeline) as device:
                 vis.update_renderer()
             if len(num_pts)>5000:
                 print("Obstacle")
-                #s.send(bytes('1','utf-8'))
+#                 s.send(bytes('1','utf-8'))
             else:
                 print("Nothing")
-                #s.send(bytes('0','utf-8'))
+#                 s.send(bytes('0','utf-8'))
 
             if cv2.waitKey(1) == ord('q'):
                 break
