@@ -1,7 +1,6 @@
 # Hardware Report
 
-## _Components Overview_
-
+# _Components Overview_
 
 __Key Components__
 
