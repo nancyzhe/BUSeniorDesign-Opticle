@@ -2,7 +2,7 @@
 
 ## _Components Overview_
 
-# ___Key Components___
+__Key Components__
 
 # ___OAK-D___
 
