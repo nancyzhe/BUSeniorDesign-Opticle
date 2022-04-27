@@ -1,8 +1,8 @@
 # Hardware Report
 
-# _Components Overview_
+# __Components Overview__
 
-__Key Components__
+# ___Key Components___
 
 # ___OAK-D___
 
