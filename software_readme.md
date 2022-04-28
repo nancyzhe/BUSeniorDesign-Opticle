@@ -27,5 +27,21 @@ There are three files that contain all the logic necessary to accomplish the fun
 ![diagram](images/swdiagram.png)
 
 ## Dev/Build Tool Information
+```
+python==3.8.8
+depthai==2.15.1.0
+gTTS==2.2.4
+numpy==1.22.3
+open3d==0.10.0.0
+opencv-python==4.5.1.48
+```
 
 ## Installation
+Install the requirements by running the following command:
+```
+python -m pip install -r requirements.txt
+```
+Run the program by running:
+```
+python spatial_tiny_yolo.py
+```
