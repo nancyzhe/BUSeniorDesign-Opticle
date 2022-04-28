@@ -5,7 +5,7 @@ There are three files that contain all the logic necessary to accomplish the fun
 - [depthai_setup.py]() - contains the code needed to setup the pipelines to obtain rgb and depth data from the OAK-D as well as the detections from the model that is being used. 
 - [spatial_tiny_yolo.py]() - contains the code needed to generate the pointcloud from the data obtained by the OAK-D and to determine whether an obstacle is present. It also contains the code needed to obtain the directions to the object of interest.
 - [projector_3d.py]() - this file was obtained from the following [source](). It contains the code necessary to generate a pointcloud from rgb and depth data. It also contains a function to the visualize the pointcloud.
-- [piservery.py]() - contains the code needed to host a server on the Pi Zero and receive data from the Pi 4 on whether an obstacle is present or not. It also contains code that causes the linear resonant actuator to vibrate. This file is run independently only on the Pi Zero.
+- [piserver.py]() - contains the code needed to host a server on the Pi Zero and receive data from the Pi 4 on whether an obstacle is present or not. It also contains code that causes the linear resonant actuator to vibrate. This file is run independently only on the Pi Zero.
 #### Modules
 ##### depthai_setup.py
 - DepthAi Class
