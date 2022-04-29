@@ -110,7 +110,7 @@ __Final Assembly of Product__
 
 Below is a visual assembly of product Opticle from a front and back perspective.
 
-<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/assembledmount%20diagram.png" width=450px height=450px> <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/IMG_3135.png" width=400px height=450px>
+<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/assembledmount%20diagram.png" width=450px height=450px> <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/backview.HEIC" width=400px height=450px>
 
 
 
