@@ -8,7 +8,7 @@ The OAK-D is the primary component of Opticle that facilitates 3 major functions
 
 __Hardware Specifications:__
 
-The OAK camera uses USB-C cable for communication and power. It supports both USB2 and USB3(5Gbps / 10 Gbps)
+The OAK camera uses USB-C cable for communication and power. It supports both USB2 and USB3(5Gbps / 10 Gbps).
 | Camera Specs | Color Camera | Stereo Pair|
 | ------ | ------ | ------|
 | Sensor | IMX378 |OV9282
@@ -18,6 +18,11 @@ The OAK camera uses USB-C cable for communication and power. It supports both US
 | Pixel Size |  1.55µm x 1.55µm| 3µm x 3µm
 
 <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/oakd.png" width=50% height=50%>
+
+
+The OAK-D has a 100% detection accuracy when an object is inside in the region of interest as highlighted in the image below provided that the size of the obstacle is at least 46.5 square inches in projected area. The point cloud's region of interest spans 5 feet 7 inches in length, 3 feet 3 inches in width and 3 feet above and below the camera with DFOV angle of 82°.
+
+<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/roifinal.png" width=50% height=50%>
 
 ___Raspberry Pi 4B___
 
@@ -101,9 +106,8 @@ __Weight of Product__
 |Total |580.50|
 
 __Final Assembly of Product__ 
-
-<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/IMG_3389.PNG" width=400px height=400px>
-<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/IMG_3135.png" width=400px height=400px>
+Below is a visual of the front and back 
+<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/assembledmount%20diagram.png" width=500px height=500px> <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/IMG_3135.png" width=500px height=500px>
 
 
 
