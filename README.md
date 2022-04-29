@@ -73,6 +73,6 @@ Documentation for setup and installation is available at [DepthAI API Docs](http
 
 <a name="sources"></a> 
 ## Sources
-Code and dependencies are available in the [Spatial Tiny Yolo Example of the Luxonis repository](https://github.com/luxonis/depthai-python/tree/main/examples/SpatialDetection).<br/>
+[Spatial Tiny Yolo Example of the Luxonis repository](https://github.com/luxonis/depthai-python/tree/main/examples/SpatialDetection) was used as an example on how to run a YOLO model on the OAK-D.<br/>
 Source material on socket programming used in our project can be found [here](https://docs.python.org/3/howto/sockets.html). <br/>
-Source for point cloud projection can be found [here](https://github.com/luxonis/depthai-experiments/tree/master/gen2-pointcloud/rgbd-pointcloud).
+Source for generating a point cloud from RGB and Depth data can be found [here](https://github.com/luxonis/depthai-experiments/tree/master/gen2-pointcloud/rgbd-pointcloud).
