@@ -34,7 +34,6 @@ gTTS==2.2.4
 numpy==1.22.3
 open3d==0.10.0.0
 opencv-python==4.5.1.48
-socket
 mpg123
 ```
 
@@ -42,7 +41,6 @@ mpg123
 Install the requirements by running the following command:
 ```
 python -m pip install -r requirements.txt
-sudo apt-get install socket
 sudo apt-get install mpg123
 ```
 Run the program by running:
