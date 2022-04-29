@@ -73,11 +73,11 @@ Many of the components were purchased from vendors as the software was the prima
 __Power Consumption__
 
 
-| Product | Amps(A) | Volts(V)| Capacity(maH)|Produces/Requires|
+| Product | Amps (A) | Capacity (maH) | Volts (V) |Produces/Requires|
 | ------ | ------ | ------| ------ | ------|
 | OAK-D | 3 | N/A | 5 | Requires
 | Raspberry Pi 4B | 5.1 | N/A | 5 | Requires
-| PowerBank | 3 | 10000 | 5 | Produces
+| PowerBank | 3 | 10400 | 5 | Produces
 | Raspberry Pi Zero | 0.8 | N/A | 5 | Requires
 | Raspberry Pi Sugar | 2 | 1200 | 5 | Produces
 
