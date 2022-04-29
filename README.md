@@ -75,4 +75,4 @@ Documentation for setup and installation is available at [DepthAI API Docs](http
 ## Sources
 Code and dependencies are available in the [Spatial Tiny Yolo Example of the Luxonis repository](https://github.com/luxonis/depthai-python/tree/main/examples/SpatialDetection).<br/>
 Source material on socket programming used in our project can be found [here](https://docs.python.org/3/howto/sockets.html). <br/>
-Source for point cloud projection can be found [here](https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/point-cloud-projection/README.zh-CN.md).
+Source for point cloud projection can be found [here](https://github.com/luxonis/depthai-experiments/tree/master/gen2-pointcloud/rgbd-pointcloud).
