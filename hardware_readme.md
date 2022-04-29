@@ -4,6 +4,7 @@
 __Key Components__
 
 ___OAK-D___
+
 The OAK-D is the primary component of Opticle that facilitates 3 major functions through its 4K RGB Camera for visual perception, a stereo pair for depth perception and an Intel Myriad X Visual processing Unit to function as the brain/processor capable of running modern neural networks while simultaneously creating a depth map from the stereo pair of images in real time.
 
 __Hardware Specifications:__
@@ -106,8 +107,10 @@ __Weight of Product__
 |Total |580.50|
 
 __Final Assembly of Product__ 
-Below is a visual of the front and back 
-<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/assembledmount%20diagram.png" width=500px height=500px> <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/IMG_3135.png" width=500px height=500px>
+
+Below is a visual assembly of product Opticle from a front and back perspective.
+
+<img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/assembledmount%20diagram.png" width=450px height=450px> <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/IMG_3135.png" width=400px height=450px>
 
 
 
