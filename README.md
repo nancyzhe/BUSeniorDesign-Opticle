@@ -9,17 +9,20 @@ A wearable solution for visually impaired individuals to feel more confident nav
 * [Stefan Wong](https://github.com/swong964)
 * [Nancy Zheng](https://github.com/nancyzhe)
 
-## Reports
-* [Hardware Report](https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/hardware_readme.md)
-* [Software Report](https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/software_readme.md)
-* [Previous Team Reports](https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/tree/main/Reports)
+### Table of Contents:
+* [Project Overview](#projectoverview)
+* [Engineering Addendum](#eng_add)
+* [Documentation](#documentation)
+* [Sources](#sources)
 
+<a name="projectoverview"></a> 
 ## Project Overview
 
-Problem: Visual impairment impacts millions of people all over the world, affecting their quality of life, independence and mobility. Current mobility aid solutions are limited in detecting off ground obstacles, do not provide semantic information, and are not always suitable for all age groups.
+**Problem:** Visual impairment impacts millions of people all over the world, affecting their quality of life, independence and mobility. Current mobility aid solutions are limited in detecting off ground obstacles, do not provide semantic information, and are not always suitable for all age groups.
 
-Solution: Our solution is to create a wearable technology that detects obstacles in indoor and outdoor environments with a depth-sensing AI camera. Opticle alerts users with haptic feedback and auditory output when obstacles are detected. The user will wear a chest mount with a camera and a linear resonant actuator mounted to it, as well as bone conducting headphones. Our hope is that our solution allows visually impaired individuals to feel more confident being independent when navigating unknown environments.
+**Solution:** Our solution is to create a wearable technology that detects obstacles in indoor and outdoor environments with a depth-sensing AI camera. Opticle alerts users with haptic feedback and auditory output when obstacles are detected. The user will wear a chest mount with a camera and a linear resonant actuator mounted to it, as well as bone conducting headphones. Our hope is that our solution allows visually impaired individuals to feel more confident being independent when navigating unknown environments.
 
+<a name="eng_add"></a> 
 ## Engineering Addendum
 
 ### Current Functionality of Device
@@ -61,11 +64,13 @@ In order to identify particular objects and their positioning, a neural network 
 * Various package installations when running on new device
 	* When running our project on a new Raspberry Pi, we needed to make sure that the proper numpy packages were installed accordingly in order to run the code.
 
+<a name="documentation"></a> 
 ## Documentation
 Documentation for setup and installation is available at [DepthAI API Docs](https://docs.luxonis.com/projects/api/en/latest/install/).
 
 * [Hardware Documentation](https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/hardware_readme.md)
 * [Software Documentation](https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/software_readme.md)
 
+<a name="sources"></a> 
 ## Sources
 Code and dependencies are available in the [Spatial Tiny Yolo Example of the Luxonis repository](https://github.com/luxonis/depthai-python/tree/main/examples/SpatialDetection).
