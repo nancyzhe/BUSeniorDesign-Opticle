@@ -74,4 +74,5 @@ Documentation for setup and installation is available at [DepthAI API Docs](http
 <a name="sources"></a> 
 ## Sources
 Code and dependencies are available in the [Spatial Tiny Yolo Example of the Luxonis repository](https://github.com/luxonis/depthai-python/tree/main/examples/SpatialDetection).
+
 Source material on socket programming used in our project can be found [here](https://docs.python.org/3/howto/sockets.html).
