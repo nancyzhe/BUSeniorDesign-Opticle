@@ -65,4 +65,4 @@ In order to identify particular objects and their positioning, a neural network 
 Documentation for setup and installation is available at [DepthAI API Docs](https://docs.luxonis.com/projects/api/en/latest/install/).
 
 ## Sources
-Code and dependencies are available in the [Luxonis repository](https://github.com/luxonis/depthai-python).
+Code and dependencies are available in the [Spatial Tiny Yolo Example of the Luxonis repository](https://github.com/luxonis/depthai-python/tree/main/examples/SpatialDetection).
