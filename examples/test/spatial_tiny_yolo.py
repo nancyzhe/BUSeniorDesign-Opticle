@@ -14,6 +14,7 @@ from collections import deque
 
 from gtts import *
 from playsound import playsound
+import os
 
 
 rpi = 0
@@ -141,7 +142,8 @@ class Main:
                 vdistance = str(round(self.lastsaid[1]/1000*3.28,1))
                 message=self.target+vdistance+"feetat"+heading+"o'clock"
                 Popen(cmd_start+'"'+message+'"'+cmd_mid+cmd_end, shell=True)
-                Popen('message.mp3', shell=True)
+                #Popen('message.mp3', shell=True)
+                os.system('mpg123 message.mp3')
               
           
             #cmd_start+self.target+vdistance+"feetat"+heading+"o'clock"+speed,shell=True
