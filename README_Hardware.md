@@ -5,7 +5,7 @@ __Key Components__
 
 ___OAK-D___
 
-The OAK-D is the primary component of Opticle that facilitates 3 major functions through its 4K RGB Camera for visual perception, a stereo pair for depth perception and an Intel Myriad X Visual processing Unit to function as the brain/processor capable of running modern neural networks while simultaneously creating a depth map from the stereo pair of images in real time.
+The OAK-D is the primary component of OpenGuide-Assist that facilitates 3 major functions through its 4K RGB Camera for visual perception, a stereo pair for depth perception and an Intel Myriad X Visual processing Unit to function as the brain/processor capable of running modern neural networks while simultaneously creating a depth map from the stereo pair of images in real time.
 
 __Hardware Specifications:__
 
@@ -50,7 +50,7 @@ Select components were constructed on OnShape(CAD Software) and the files are at
 
 __Schematic Diagram__
 
-Below is the overall schematic of Opticle and how the various components interact with each other;
+Below is the overall schematic of OpenGuide-Assist and how the various components interact with each other;
 <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/schematics%20diagram.png" width=50% height=50%>
 
 __Bill of Materials__
@@ -108,7 +108,7 @@ __Weight of Product__
 
 __Final Assembly of Product__ 
 
-Below is a visual assembly of product Opticle from a front and back perspective.
+Below is a visual assembly of product OpenGuide-Assist from a front and back perspective.
 
 <img src="https://github.com/amg1998/BUSeniorDesign-Opticle-21-22/blob/main/images/assembledmount%20diagram.png" width=450px height=450px> <img  src="images/backview.png" width=400px height=450px>
 

@@ -11,6 +11,7 @@ from subprocess import Popen
 from depthai_setup import DepthAi
 from projector_3d import PointCloudVisualizer
 from collections import deque
+import speech_recognition as sr
 
 from gtts import *
 from playsound import playsound
@@ -23,6 +24,10 @@ start=datetime.now()
 cmd_start='gtts-cli '
 cmd_mid=' --output '
 cmd_end='message.mp3'
+scan_end ='scan.mp3'
+opensound = ""
+modeswitchpin=1
+mode = 1
 
 if (rpi==1):
     # setup socket
@@ -220,7 +225,47 @@ class Main:
         elif (-75<angle<=-45):
             heading = 11
         return(str(heading))
+    
+    def get_target(self):
+        while True:
+            saidtext=''
+            if (modeswitchpin == 1 and mode == 1):
+                r = sr.Recognizer()
+                with sr.Microphone(device_index=6) as source:
+                    print("You have entered the scanning mode:")
+                    prompt='Say'+'object'
+                    #Popen([s_cmd_start+prompt+speed+s_cmd_end],shell=True)
+                    Popen(opensound+'sayobject.mp3', shell=True)
+                    audio=r.adjust_for_ambient_noise(source)
+                    audio=r.listen(source)
+                try:
+                    text = "handle"
+                    # r.recognize_google(audio)
 
+                    print("You said: " + text)
+                    if (text not in self.labelMap):
+                        errormessage='Try'+'again'
+                        #Popen([s_cmd_start+errormessage+speed+s_cmd_end],shell=True)
+                        Popen(opensound+'tryagain.mp3', shell=True)
+                        break
+                    else:
+                        saidtext=text
+                        confirm='Scanning'+'for'
+                        #Popen([s_cmd_start+confirm+saidtext+speed+s_cmd_end],shell=True)
+                        scanmessage = 'Scanning '+'for '+text
+                        #print(cmd_start+'"'+scanmessage+'"'+' '+cmd_mid+scan_end)
+                        Popen(cmd_start+'"'+scanmessage+'"'+' '+cmd_mid+scan_end, shell=True)
+                        Popen(opensound+'scan.mp3', shell=True)
+
+                except sr.UnknownValueError:
+                    print('Sorry could not recognize voice')
+                    errormessage='Try'+'again'
+                    #Popen([s_cmd_start+errormessage+speed+s_cmd_end],shell=True)
+                    Popen(opensound+'tryagain.mp3', shell=True)
+                    break
+                except sr.RequestError as e:
+                    print("error 2")
+        print("out")
 
     def run_pointcloud(self): 
 
@@ -269,4 +314,4 @@ class Main:
 
 if __name__ == '__main__':
 
-    Main().run_yolo_pc()
+    Main().get_target()

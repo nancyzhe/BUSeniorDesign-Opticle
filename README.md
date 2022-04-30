@@ -1,5 +1,5 @@
 # Senior Design 2021 - 2022
-# Opticle: Guided Vision for the Visually Impaired
+# OpenGuide-Assist: Guided Vision for the Visually Impaired
 A wearable solution for visually impaired individuals to feel more confident navigating their environment. 
 
 ## Team Members:
@@ -20,7 +20,7 @@ A wearable solution for visually impaired individuals to feel more confident nav
 
 **Problem:** Visual impairment impacts millions of people all over the world, affecting their quality of life, independence and mobility. Current mobility aid solutions are limited in detecting off ground obstacles, do not provide semantic information, and are not always suitable for all age groups.
 
-**Solution:** Our solution is to create a wearable technology that detects obstacles in indoor and outdoor environments with a depth-sensing AI camera. Opticle alerts users with haptic feedback and auditory output when obstacles are detected. The user will wear a chest mount with a camera and a linear resonant actuator mounted to it, as well as bone conducting headphones. Our hope is that our solution allows visually impaired individuals to feel more confident being independent when navigating unknown environments.
+**Solution:** Our solution is to create a wearable technology that detects obstacles in indoor and outdoor environments with a depth-sensing AI camera. OpenGuide-Assist alerts users with haptic feedback and auditory output when obstacles are detected. The user will wear a chest mount with a camera and a linear resonant actuator mounted to it, as well as bone conducting headphones. Our hope is that our solution allows visually impaired individuals to feel more confident being independent when navigating unknown environments.
 
 <a name="eng_add"></a> 
 ## Engineering Addendum
