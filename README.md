@@ -2,6 +2,8 @@
 # OpenGuide-Assist: Guided Vision for the Visually Impaired
 A wearable solution for visually impaired individuals to feel more confident navigating their environment. 
 
+[Presentation Poster](https://github.com/nancyzhe/BUSeniorDesign-Opticle/blob/main/images/Opticle%20Presentation%20Poster.pdf)
+
 ## Team Members:
 * [Annamalai Ganesh](https://github.com/amg1998)
 * [Luca Guidi](https://github.com/luca-guidi)
